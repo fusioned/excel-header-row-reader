@@ -10,10 +10,64 @@ Optionally append the first content row after the header for additional inspecti
 
 import sys
 import argparse
+import csv
 from openpyxl import load_workbook
 
-class CsvRender:
-    """Output to a CSV format"""
+class CsvWriterRender:
+    """Output to a CSV format using the csv module """
+
+    def __init__(self, output=sys.stdout, num_cols_pad=20, append_first_body_row=False):
+        """
+        num_cols_pad indicate the number of columns minimum before the body data is added on
+        e.g. when num_cols_pad = 3 and append_first_body_row = True
+            ,,,extra,body_content
+            a,b,,extra,content
+            filename,,,additional
+
+        """
+        self.num_cols = num_cols_pad
+        self.append_body = append_first_body_row
+        self.row = []
+        self.output = csv.writer(output)
+
+    def start(self):
+        pass
+
+    def filename(self, filename):
+        self._cell(filename)
+
+    def sheet_name(self, name):
+        self._cell(name)
+
+    def header_cell(self, value, cell, index):
+        self._cell(value if value else '')
+
+    def header_row(self, row):
+        pass
+
+    def body_row(self, row):
+        # pad this out
+        if self.append_body:
+            self.row += [''] * (self.num_cols - len(self.row))
+
+    def body_cell(self, value, cell, index):
+        if self.append_body:
+            self._cell(value if value else '')
+
+    def done(self):
+        self._newline()
+
+    def _cell(self, value):
+        self.row += [value]
+
+    def _newline(self):
+        if self.row:
+            self.output.writerow(self.row)
+        self.row = []
+
+
+class SimpleCsvRender:
+    """Output to a CSV format naively """
 
     def __init__(self, num_cols_pad=20, append_first_body_row=False):
         """
@@ -107,7 +161,9 @@ def main():
     if (args.format == 'classic'):
         renderer = ClassicRender(append_first_body_row=args.body)
     else:
-        renderer = CsvRender(append_first_body_row=args.body, num_cols_pad=args.pad_left or 20)
+        renderer = CsvWriterRender(append_first_body_row=args.body, 
+            output=args.output,
+            num_cols_pad=args.pad_left or 20)
 
     for filename in args.filenames:
         process(filename, renderer)
