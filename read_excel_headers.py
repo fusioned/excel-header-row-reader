@@ -66,58 +66,6 @@ class CsvWriterRender:
         self.row = []
 
 
-class SimpleCsvRender:
-    """Output to a CSV format naively """
-
-    def __init__(self, num_cols_pad=20, append_first_body_row=False):
-        """
-        num_cols_pad indicate the number of columns minimum before the body data is added on
-        e.g. when num_cols_pad = 3 and append_first_body_row = True
-            ,,,extra,body_content
-            a,b,,extra,content
-            filename,,,additional
-
-        """
-        self.num_cols = num_cols_pad
-        self.append_body = append_first_body_row
-        self.cols = 0
-
-    def start(self):
-        pass
-
-    def filename(self, filename):
-        self.cols = 0
-        self._cell(filename)
-
-    def sheet_name(self, name):
-        self._cell(name)
-
-    def header_cell(self, value, cell, index):
-        self._cell(value if value else '')
-
-    def header_row(self, row):
-        pass
-
-    def body_row(self, row):
-        # pad this out
-        if self.append_body:
-            print(',' * (self.num_cols - self.cols), end='')
-
-    def body_cell(self, value, cell, index):
-        if self.append_body:
-            self._cell(value if value else '')
-
-    def done(self):
-        print('')
-
-    def _cell(self, value):
-        if self.cols > 0:
-            print(',', end='')
-
-        print('"' + value + '"', end='')
-        self.cols += 1
-
-
 class ClassicRender:
     """Output data indented"""
 
