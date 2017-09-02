@@ -9,7 +9,7 @@ Optionally append the first content row after the header for additional inspecti
 """
 
 import sys
-import getopt
+import argparse
 from openpyxl import load_workbook
 
 class CsvRender:
@@ -66,6 +66,13 @@ class CsvRender:
 
 class ClassicRender:
     """Output data indented"""
+
+    def __init__(self, append_first_body_row=False):
+        """
+        Option to append the first content row
+        """
+        self.append_body = append_first_body_row
+
     def start(self):
         pass
 
@@ -83,26 +90,43 @@ class ClassicRender:
         pass
 
     def body_row(self, row):
-        pass
+        if (self.append_body):
+            for cell in row:
+                print('  >  ' + (cell.value if cell.value else ''))
 
     def body_cell(self, value, cell, index):
-        if (index > 0):
-            print(',', end='')
-        print(value, end='')
+        pass
 
     def done(self):
         print('')
 
 
-def main(argv):
-    if len(argv) <= 1:
-        print('Usage: ' + argv[0] + ' <workbook>')
-        quit()
+def main():
+    args = parse_args()
 
-    renderer = CsvRender(append_first_body_row = True)
+    if (args.format == 'classic'):
+        renderer = ClassicRender(append_first_body_row=args.body)
+    else:
+        renderer = CsvRender(append_first_body_row=args.body, num_cols_pad=args.pad_left or 20)
 
-    for filename in argv[1:]:
+    for filename in args.filenames:
         process(filename, renderer)
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Parse Excel workbooks for the headers')
+    parser.add_argument('filenames', metavar='workbooks', help='Workbook files', nargs='+')
+    parser.add_argument('--include-body', '-b', dest='body', action='store_true',
+                       help='Append the next row of content data to the header output')
+    parser.add_argument('--pad-body', '-p', dest='pad_left', type=int,
+                       help='The number of cells to allocate for the headers (when using the CSV output format)')
+    parser.add_argument('--format', '-f', dest='format',
+                       help='Output format - this can be: csv, classic')
+    parser.add_argument('--output', nargs='?', type=argparse.FileType('w'), 
+                        default=sys.stdout)
+
+    args = parser.parse_args()
+
+    return(args)
 
 
 def process(filename, renderer):
@@ -128,4 +152,4 @@ def process(filename, renderer):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
