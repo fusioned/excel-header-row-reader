@@ -12,6 +12,7 @@ import sys
 import argparse
 import csv
 from openpyxl import load_workbook
+from zipfile import BadZipFile
 
 class CsvWriterRender:
     """Output to a CSV format using the csv module """
@@ -29,15 +30,25 @@ class CsvWriterRender:
         self.append_body = append_first_body_row
         self.row = []
         self.output = csv.writer(output)
+        self.sheet = ''
 
     def start(self):
         pass
 
     def filename(self, filename):
+        self.sheet = ''
         self._cell(filename)
 
     def sheet_name(self, name):
+        """ The sheet name is stored so if more than one sheet is found, 
+        the 2nd sheet onwards would be on the next line without the filename re-entered
+        """
+        if self.sheet:
+            self._newline
+            self._cell('')
+
         self._cell(name)
+        self.sheet = name
 
     def header_cell(self, value, cell, index):
         self._cell(value if value else '')
@@ -134,8 +145,13 @@ def parse_args():
 
 
 def process(filename, renderer):
+    try:
+        wb = load_workbook(filename)
+    except BadZipFile as err:
+        print('Failed to load workbook "{0}": {1}'.format(filename, err))
+        return
+
     renderer.filename(filename)
-    wb = load_workbook(filename)
     sheets = wb.get_sheet_names()
 
     for sheet_name in wb.sheetnames:
